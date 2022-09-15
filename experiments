@@ -1,0 +1,3 @@
+two-stage grasp: ok (57.82s)  ok (65.61s)  ok (46.01s)  ok (51.17s) ok (46.89s)  fail (71.38s)  ok (46.21s)  ok (40.19s)
+one-stage : fail(21.71s) fail(27.01s)  fail(29.63s)  fail(32.38s)  ok(29.78s)  ok(29.29s)  fail(27.10s)  fail(26.52s)
+

@@ -22,7 +22,8 @@ class AuboController (threading.Thread):
             print("connection failed!!")
         self.robot.robot_startup()
         self.robot.init_profile()
-        self.speed_scale_ = 0.2
+        self.speed_scale_ = 0.4 # I CHANGED THIS! Sept 14
+        # self.speed_scale_ = 0.1
         joint_maxvelc = (self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0)
         joint_maxacc  = (self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0)
         line_maxvelc  = self.speed_scale_*1.0
@@ -36,8 +37,8 @@ class AuboController (threading.Thread):
         self.srt = PythonSerialDriver()
         
         self.cTo_z_ = 0.326
-        self.pick_z_ = 0.134 + 0.018 - 0.005
-        self.sweep_z_ = 0.140 + 0.012 - 0.003
+        self.pick_z_ = 0.134 + 0.018 - 0.005 + 0.062
+        self.sweep_z_ = 0.140 + 0.012 - 0.003 +0.063 + 0.005
 
         self.medicine_box_position_origin_ = [-0.11568, -0.458656, 0.151801+0.005+0.01] # -0.11568, -0.457156, 0.151801
 
@@ -73,11 +74,11 @@ class AuboController (threading.Thread):
 
     def opening_width_mapping(self,opening):
         if opening >= 60:
-            width = 5 #4
+            width = 4 #4
         elif opening >= 53:
-            width = 5 #3
-        elif opening >= 40:
-            width = 5 #2
+            width = 3 #3
+        elif opening >= 30:
+            width = 2 #2
         elif opening >= 10:
             width = 1
         else:
@@ -89,15 +90,27 @@ class AuboController (threading.Thread):
         if width >= 5:
             pressure = 80
         elif width == 4:
-            pressure = 50
+            pressure = 70
         elif width == 3:
-            pressure = 40
+            pressure = 55
         elif width == 2:
-            pressure = 30
+            pressure = 45
         elif width == 1:
             pressure = 20
         else:
             pressure = 0
+        # if width >= 5:
+        #     pressure = 80
+        # elif width == 4:
+        #     pressure = 50
+        # elif width == 3:
+        #     pressure = 40
+        # elif width == 2:
+        #     pressure = 30
+        # elif width == 1:
+        #     pressure = 20
+        # else:
+        #     pressure = 0
         self.pos_srt(pressure)
 
         point_pre = deepcopy(point)
@@ -152,9 +165,9 @@ class AuboController (threading.Thread):
         finish_p = self.assign_pick_point(finish_p_xy[0],finish_p_xy[1],angle,self.sweep_z_)
         self.moveL(start_p)
         self.moveL(finish_p)
-        self.pos_srt(60)
+        self.pos_srt(40)
         # self.moveJ(self.photo_joints_)
-        self.neg_srt(0)
+        # self.neg_srt(0)
 
     def set_sweep(self,start_p_xy,finish_p_xy):
         #neg at first
@@ -213,10 +226,10 @@ class AuboController (threading.Thread):
             ), dtype=np.float64)
 
         wTc = np.array((
-            (   0.999732 , -0.0182786 , -0.0142087  ,-0.0153094),
-            (  0.0182479 ,   0.999831 ,-0.00228665  ,  0.066011),
+            (   0.999732 , -0.0182786 , -0.0142087  ,-0.0153094-0.0016),
+            (  0.0182479 ,   0.999831 ,-0.00228665  ,  0.066011-0.002),
             (  0.0142481 , 0.00202676 ,   0.999896  , 0.0101006),
-            (                0.0,                 0.0,                 0.0, 1.0)
+            (         0.0,         0.0,         0.0,        1.0)
             ), dtype=np.float64)            
         bTc = np.dot(bTw,wTc)
 
@@ -285,17 +298,71 @@ class AuboController (threading.Thread):
     #     # Led Control
     #     input_str = str(strip_id) + str(led_id) + str(led_color)
     #     self.led.write(bytes(input_str, encoding = "utf8"))
+
+    def find_place_pose(self, pill_id):
+        place_pose_1 = [0.07527888398880958, -0.28993198184034424, 0.21833367897001926-0.005, 0.0003226884309160187, -0.9999996130325639, -0.0006070149194710236, 0.0005489442472058018]
+        place_pose_2 = [0.18401451324827875, -0.28993008521408536, 0.21833178043211302-0.005, 0.00033365920891618056, -0.9999995854364833, -0.0006427299017719509, 0.000551993358184889]
+        place_pose_3 = [0.29249007993380727, -0.2899204873052338, 0.2183338261013369-0.005, 0.00032909484032954997, -0.9999995778093516, -0.0006623035118159901, 0.0005453730494115345]
+        place_pose_4 = [0.4039538787798124, -0.2899226947859364, 0.21833607048550713-0.005, 0.00032430204966982066, -0.999999581121588, -0.0006621136254581226, 0.0005423931931768068]
+
+        if pill_id == 'A':
+            return place_pose_1
+        elif pill_id == 'B':
+            return place_pose_2
+        elif pill_id == 'C':
+            return place_pose_3
+        elif pill_id == 'D':
+            return place_pose_4
+        elif pill_id == 'E':
+            return place_pose_4
+        elif pill_id == 'F':
+            return place_pose_3
+        elif pill_id == 'G':
+            return place_pose_2
+        elif pill_id == 'H':
+            return place_pose_1
+        else:
+            print('Pill ID error!')
+            return place_pose_1
+
+    def find_grasping_pose(self, pill_id):
+        # Grasp SOME
+        grasp_pose_1 = [0.07906140144767754-0.01, -0.3880466268839969, 0.1627275633806139, 0.00032001149681460804, -0.9998324819174745, 0.01829231174002348, 0.0005450014594178438]
+        grasp_pose_2 = [0.18946229861861963, -0.38804696588168225+0.015, 0.16624678708473153, 0.00031929934115045516, -0.99983241504298, 0.018295950907924973, 0.0005459465429630924]
+        grasp_pose_3 = [0.2973060001262372+0.016, -0.3880447242165994+0.002, 0.16035126311643733 + 0.001, 0.00031893460275061303, -0.9998325064564134, 0.018290877638362967, 0.0005487340190974398]
+        grasp_pose_4 = [0.4125910363366381+0.013, -0.38804541145333415-0.014, 0.15362441115264502, 0.0003204616550893969, -0.9998324963590879, 0.01829143934923484, 0.0005475173198283822]
+        grasp_pose_5 = [0.08325185086063296-0.016, -0.2031378212383125, 0.1646959209601539-0.01, 0.0003215350704869227, -0.9998325074999375, 0.01829086367121273, 0.0005457726149138237]
+        grasp_pose_6 = [0.20036848183773304, -0.1933884766554534-0.017, 0.16591206511559028, 0.00032597591280512207, -0.9998324765998644, 0.018292481803730717, 0.000545513836853285]
+        grasp_pose_7 = [0.3024835164742523-0.006, -0.19338783929484285+0.01, 0.16591206511559028-0.01, 0.0003226885018341782, -0.999832571895182, 0.018287345387264026, 0.0005450213606656084]
+        grasp_pose_8 = [0.41065364670496773+0.012, -0.19339153784697233-0.008, 0.16591206511559028+0.005, 0.00032542499193981576, -0.9998324959975268, 0.018291469507588424, 0.0005442326555055663]
+
+        if pill_id == 'A':
+            return grasp_pose_1
+        elif pill_id == 'B':
+            return grasp_pose_2
+        elif pill_id == 'C':
+            return grasp_pose_3
+        elif pill_id == 'D':
+            return grasp_pose_4
+        elif pill_id == 'E':
+            return grasp_pose_8
+        elif pill_id == 'F':
+            return grasp_pose_7
+        elif pill_id == 'G':
+            return grasp_pose_6
+        elif pill_id == 'H':
+            return grasp_pose_5
+        else:
+            print('Pill ID error!')
+            return grasp_pose_1
+
+
     def find_capture_position(self, pill_id):
-        photo_joints_1 = [1.4730256795883179, -0.34653106331825256, -2.125231981277466, -0.20790015161037445, -1.5707817077636719, -0.09777495265007019]
-        photo_joints_2 = [1.786336898803711, -0.22321327030658722, -2.0405197143554688, -0.24645480513572693, -1.5707778930664062, 0.21557366847991943]
-        photo_joints_3 = [2.036971092224121, -0.050181955099105835, -1.893932580947876, -0.2728939652442932, -1.570763349533081, 0.4662063419818878]
-        photo_joints_4 = [2.2346556186676025, 0.1413116604089737, -1.6926169395446777, -0.2630929946899414, -1.5707486867904663, 0.6638177633285522]
-        photo_joints_5 = [1.3685804605484009, -0.8554477691650391, -2.3235747814178467, 0.10272679477930069, -1.5708036422729492, -0.2022514045238495]
-        photo_joints_6 = [1.8979649543762207, -0.6174340844154358, -2.258864641189575, -0.07057652622461319, -1.5707743167877197, 0.32712942361831665]
-        photo_joints_7 = [2.244480848312378, -0.3250896632671356, -2.1116440296173096, -0.215709388256073, -1.5707522630691528, 0.6736223697662354]
-        photo_joints_8 = [2.4455575942993164, -0.057986337691545486, -1.901244044303894, -0.2724244296550751, -1.5707412958145142, 0.8747220039367676]
-        photo_joints_9 = [2.5996763706207275, -0.5001784563064575, -2.209414482116699, -0.13841304183006287, -1.5707448720932007, 1.028845191001892]
-        photo_joints_10 = [2.747540235519409, -0.17208829522132874, -2.0006282329559326, -0.25771933794021606, -1.5707412958145142, 1.1767144203186035]
+        photo_joints_1 = [1.435767412185669, -0.6941367983818054, -2.22825026512146, 0.0371534563601017, -1.5719701051712036, -0.1362195611000061]
+        photo_joints_2 = [1.876967430114746, -0.5009561777114868, -2.1527936458587646, -0.08011706173419952, -1.5716582536697388, 0.3049488663673401]
+        photo_joints_3 = [2.179381847381592, -0.26175448298454285, -2.0107624530792236, -0.17706304788589478, -1.5713354349136353, 0.6073704361915588]
+        photo_joints_4 = [2.380605936050415, -0.015562836080789566, -1.8021048307418823, -0.21452096104621887, -1.5710898637771606, 0.8085911273956299]
+
 
         if pill_id == 'A':
             return photo_joints_1
@@ -306,17 +373,13 @@ class AuboController (threading.Thread):
         elif pill_id == 'D':
             return photo_joints_4
         elif pill_id == 'E':
-            return photo_joints_5
+            return photo_joints_4
         elif pill_id == 'F':
-            return photo_joints_6
+            return photo_joints_3
         elif pill_id == 'G':
-            return photo_joints_7
+            return photo_joints_2
         elif pill_id == 'H':
-            return photo_joints_8
-        elif pill_id == 'I':
-            return photo_joints_9
-        elif pill_id == 'J':
-            return photo_joints_10
+            return photo_joints_1
         else:
             print('Pill ID error!')
             return photo_joints_1

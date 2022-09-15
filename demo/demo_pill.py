@@ -19,6 +19,7 @@ from demo.predictor import VisualizationDemo
 from centermask.config import get_cfg
 from centermask.grasp import grasp
 
+mask_corners = [[544,192], [857,422]]
 
 def setup_cfg(args):
     # load config from file and command-line arguments
@@ -95,15 +96,15 @@ def pill_segmentation(img):
     #visualized_output.save(out_filename)
 
     # wipe all detections outside the manipulation area
-    img_ins_seg[:,0:560] = 1
-    img_ins_seg[:,900:-1] = 1
-    img_ins_seg[0:77, :] = 1
-    img_ins_seg[530:-1, :] = 1
+    img_ins_seg[:,0:550] = 1
+    img_ins_seg[:,880:-1] = 1
+    img_ins_seg[0:215, :] = 1
+    img_ins_seg[460:-1, :] = 1
 
-    img_sem_seg[:,0:560] = 1
-    img_sem_seg[:,900:-1] = 1
-    img_sem_seg[0:77, :] = 1
-    img_sem_seg[530:-1, :] = 1
+    img_sem_seg[:,0:550] = 1
+    img_sem_seg[:,880:-1] = 1
+    img_sem_seg[0:215, :] = 1
+    img_sem_seg[460:-1, :] = 1
 
     # do not detect gripper as pill
     img_ins_seg[0:45, 780:920] = 1
@@ -111,7 +112,59 @@ def pill_segmentation(img):
 
     return img_ins_seg, img_sem_seg
 
+def pill_segmentation_mask_first(img):
+    mp.set_start_method("spawn", force=True)
+    args = get_parser().parse_args()
+    logger = setup_logger()
+    # logger.info("Arguments: " + str(args))
+    cfg = setup_cfg(args)
 
+    # wipe all detections outside the manipulation area
+    img[:,:mask_corners[0][0]  ,:] = 1
+    img[:,mask_corners[1][0]:-1,:] = 1
+    img[:mask_corners[0][1],:  ,:] = 1
+    img[mask_corners[1][1]:-1,:,:] = 1
+
+    # do not detect gripper as pill
+    img[0:45, 780:920,:] = 1
+
+    # use PIL, to be consistent with evaluation
+    #path = '/home/hanwen/Projects/qingwei/centermask2/input_img/06150_Color.png'
+    #img = read_image(path, format="BGR")
+    img_sem_seg = copy.deepcopy(img)
+    img_sem_seg = np.swapaxes(img_sem_seg, 0,2)
+    img_sem_seg = np.swapaxes(img_sem_seg, 1,2)
+    img_sem_seg = img_sem_seg[0]
+    img_ins_seg = copy.deepcopy(img_sem_seg)
+    
+    # Detection
+    demo = VisualizationDemo(cfg)
+    start_time = time.time()
+    predictions, visualized_output = demo.run_on_image(img)
+    len_instance = len(predictions['instances'])
+
+    #sem seg
+    img_sem_seg[img_sem_seg >= 0] =1
+    for i in range(len_instance):
+        single_mask = predictions['instances'][i].get_fields()['pred_masks'].cpu().numpy()
+        single_mask = single_mask[0]
+        pred_class = predictions['instances'][i].get_fields()['pred_classes'].cpu().numpy()[0]
+        img_sem_seg[single_mask == True ] = (pred_class + 2) * 1
+        
+    #ins_seg
+    img_ins_seg[img_ins_seg >= 0] =1
+    for i in range(2,len_instance+2):
+        single_mask = predictions['instances'][i-2].get_fields()['pred_masks'].cpu().numpy()
+        single_mask = single_mask[0]
+        img_ins_seg[single_mask == True ] = i * 1
+    
+    # logger.info("{}: detected {} instances in {:.2f}s".format(path, len(predictions["instances"]), time.time() - start_time))
+
+    #out_filename = os.path.join(args.output, os.path.basename(path))
+    #visualized_output.save(out_filename)
+
+
+    return img_ins_seg, img_sem_seg
 
 if __name__ == "__main__":
     path = '/home/hanwen/Projects/pill-sorting/qingwei/centermask2/input_img/2.jpg'

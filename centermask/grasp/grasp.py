@@ -82,9 +82,9 @@ def collisionCheck(pts, cnt, grasp_axis, grasp_axis_2, img, pill_img):
     #print('fingercontact_1',fingercontact_1)
 
     SCALE = 1/3
-    finger_h = int(40 * SCALE)
-    finger_w = int(120 * SCALE)
-    finger_open_margin = 15 * SCALE
+    finger_h = int(20 * SCALE)  #40
+    finger_w = int(120 * SCALE) #120
+    finger_open_margin = 15 * SCALE  #15
     grasp_axis_2 = grasp_axis_2 * finger_w / 2
     grasp_axis = grasp_axis * (finger_h + finger_open_margin) / 2
 
@@ -108,7 +108,7 @@ def collisionCheck(pts, cnt, grasp_axis, grasp_axis_2, img, pill_img):
     grasp_opening_dist = np.linalg.norm((start_point_2 + end_point_2) / 2 - (start_point_1 + end_point_1) / 2)
 
     # Create virtual border (box walls)
-    # cv.rectangle(pill_mask, (0, 0), (pill_mask.shape[1], pill_mask.shape[0]), color=255, thickness=10)
+    cv.rectangle(pill_mask, (0, 0), (pill_mask.shape[1], pill_mask.shape[0]), color=255, thickness=10)
     cv.line(pill_mask, (642,121), (810,117), color=255, thickness=5)
     cv.line(pill_mask, (810,117), (862,172), color=255, thickness=5)
     cv.line(pill_mask, (862,172), (864,442), color=255, thickness=5)
@@ -151,7 +151,7 @@ def collisionCheck(pts, cnt, grasp_axis, grasp_axis_2, img, pill_img):
         return False, cnt, grasp_opening_dist
 
 
-def grasp_detection(img, img_ins_seg, img_sem_seg, vis):
+def grasp_detection(img, img_ins_seg, img_sem_seg, vis, axs):
     img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     '''
     img_gray = cv.imread('test2.jpg', 0)
@@ -180,7 +180,7 @@ def grasp_detection(img, img_ins_seg, img_sem_seg, vis):
     #_, opening = cv.threshold(img_ins_seg, 1, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
     _, opening = cv.threshold(img_ins_seg, 1, 255, cv.THRESH_BINARY)
     
-    #plt.imshow(markers_ctrp), plt.show()
+    # plt.imshow(markers_ctrp), plt.show()
     
     collision_free_grasp_count = 0
     collision_free_grasp = {'grasp_coord': [], 'grasp_angle': [], 'grasp_opening':[], 'class':[]}
@@ -189,7 +189,7 @@ def grasp_detection(img, img_ins_seg, img_sem_seg, vis):
         # itr on each pill
         cnt = i + 1
         if cnt == 1:
-            continue  # cnt=1: background
+            continue  # cnt=1: skip background
 
         # Find main axis of each pill
         curr_pill_mask = (markers == cnt)  # true/false array
@@ -210,7 +210,7 @@ def grasp_detection(img, img_ins_seg, img_sem_seg, vis):
                 largest_contour_area = area
                 largest_contour_idx = i
         #print('area=', cv.contourArea(contours[largest_contour_idx]), largest_contour_area)
-        if largest_contour_area < 100:
+        if largest_contour_area < 100: 
             continue
             
         #print('largest_contour_idx',largest_contour_idx)
@@ -248,20 +248,45 @@ def grasp_detection(img, img_ins_seg, img_sem_seg, vis):
     # plt.show()
 
     if vis:
-        fig, axs = plt.subplots(2, 3, constrained_layout=True)
-        axs[0, 0].imshow(img[:,:,::-1])
-        axs[0, 0].set_title('img_gray')
-        axs[0, 1].imshow(markers)
-        axs[0, 1].set_title('markers')    
-        axs[0, 2].imshow(opening)
-        axs[0, 2].set_title('opening') 
-        axs[1, 0].imshow(markers_ctrp)
-        axs[1, 0].set_title('markers_ctrp') 
-        axs[1, 1].imshow(img_ins_seg)
-        axs[1, 1].set_title('img_ins_seg') 
-        axs[1, 2].imshow(img_sem_seg)
-        axs[1, 2].set_title('img_sem_seg') 
-        plt.show()
+
+                # fig, axs = plt.subplots(2, 3, constrained_layout=True)
+        # figManager = plt.get_current_fig_manager()
+        # figManager.window.showMaximized()
+            
+        axs[0].set_data(img[:,:,::-1])
+        axs[0].set_label('img_gray')
+        axs[1].set_data(markers)
+        axs[1].set_label('markers')    
+        axs[2].set_data(opening)
+        axs[2].set_label('opening') 
+        axs[3].set_data(markers_ctrp)
+        axs[3].set_label('markers_ctrp') 
+        axs[4].set_data(img_ins_seg)
+        axs[4].set_label('img_ins_seg') 
+        axs[5].set_data(img_sem_seg)
+        axs[5].set_label('img_sem_seg') 
+
+        # # fig, axs = plt.subplots(2, 3, constrained_layout=True)
+        # # figManager = plt.get_current_fig_manager()
+        # # figManager.window.showMaximized()
+
+            
+        # axs[0, 0].imshow(img[:,:,::-1])
+        # axs[0, 0].set_title('img_gray')
+        # axs[0, 1].imshow(markers)
+        # axs[0, 1].set_title('markers')    
+        # axs[0, 2].imshow(opening)
+        # axs[0, 2].set_title('opening') 
+        # axs[1, 0].imshow(markers_ctrp)
+        # axs[1, 0].set_title('markers_ctrp') 
+        # axs[1, 1].imshow(img_ins_seg)
+        # axs[1, 1].set_title('img_ins_seg') 
+        # axs[1, 2].imshow(img_sem_seg)
+        # axs[1, 2].set_title('img_sem_seg') 
+        # plt.draw()
+        # plt.pause(0.1)
+        # with plt.rc_context(rc={'interactive': False}):
+        #     plt.show()
     
 
     return collision_free_grasp_count, collision_free_grasp
@@ -284,7 +309,7 @@ def get_random_grasp(collision_free_grasp):
     return grasp_coord, grasp_angle, grasp_opening, grasp_class
 
 
-def think(img, img_ins_seg, img_sem_seg, depth, vis):
+def think(img, img_ins_seg, img_sem_seg, depth, vis, axs):
     
     motion_command  = 0  # 0:pushing, 1:swiping, 2:picking
     push_start      = (0, 0)
@@ -293,18 +318,18 @@ def think(img, img_ins_seg, img_sem_seg, depth, vis):
     grasp_angle     = 0
     grasp_opening   = 0
     
-    collision_free_grasp_count, collision_free_grasp = grasp_detection(img, img_ins_seg, img_sem_seg, vis)
+    collision_free_grasp_count, collision_free_grasp = grasp_detection(img, img_ins_seg, img_sem_seg, vis, axs)
     
     # collision_free_grasp_count = 0  # for debug only
     if collision_free_grasp_count == 0:
         print('No available picking target, do pushing!')
-                            # TODO:
-                            # Get a new image, and locate centers
-                            # Find the closest 2 centers, 
-                            # and the pushing-end-point should be the center of the line connecting two closest pills
-                            # A line perpendicular to the line connecting two closest pills
-                            # Two available pushing directions
-                            # Determine the pushing distance (determining the pushing-starting-point)
+            # TODO:
+            # Get a new image, and locate centers
+            # Find the closest 2 centers, 
+            # and the pushing-end-point should be the center of the line connecting two closest pills
+            # A line perpendicular to the line connecting two closest pills
+            # Two available pushing directions
+            # Determine the pushing distance (determining the pushing-starting-point)
         
         # Human-in-the-loop Manipulation
         push_start, push_end, motion_command = push_motion_generation(img)
@@ -319,6 +344,28 @@ def think(img, img_ins_seg, img_sem_seg, depth, vis):
         grasp_coord, grasp_angle, grasp_opening, grasp_class = get_random_grasp(collision_free_grasp)
         motion_command = grasp_class
         print("Get a random grasp:", grasp_coord, grasp_angle, grasp_opening, grasp_class)
+
+    K = np.array([[914.5117797851562, 0.0, 645.9793701171875], 
+                [0.0, 912.8472290039062, 341.26898193359375], 
+                [0.0, 0.0, 1.0]])
+    push_start_3d = np.dot(np.linalg.inv(K), depth*np.array([push_start[0], push_start[1], 1]).transpose())
+    push_end_3d = np.dot(np.linalg.inv(K), depth*np.array([push_end[0], push_end[1], 1]).transpose())
+    grasp_coord_3d = np.dot(np.linalg.inv(K), depth*np.array([grasp_coord[0], grasp_coord[1], 1]).transpose())
+    return motion_command, push_start_3d[0:2], push_end_3d[0:2], grasp_coord_3d[0:2], grasp_angle, grasp_opening
+
+def check_obj_exist(img, img_ins_seg, img_sem_seg, vis):
+    # Check how many pills are on the platform
+    return np.amax(img_ins_seg) - 1
+
+def push(img, depth):
+    motion_command  = 0  # 0:pushing, 1:swiping, 2:picking
+    push_start      = (0, 0)
+    push_end        = (0, 0)
+    grasp_coord     = (0, 0)
+    grasp_angle     = 0
+    grasp_opening   = 0
+    # Human-in-the-loop Manipulation
+    push_start, push_end, motion_command = push_motion_generation(img)
 
     K = np.array([[914.5117797851562, 0.0, 645.9793701171875], 
                 [0.0, 912.8472290039062, 341.26898193359375], 
