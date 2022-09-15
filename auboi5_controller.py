@@ -22,7 +22,7 @@ class AuboController (threading.Thread):
             print("connection failed!!")
         self.robot.robot_startup()
         self.robot.init_profile()
-        self.speed_scale_ = 0.4 # I CHANGED THIS! Sept 14
+        self.speed_scale_ = 0.6 # I CHANGED THIS! Sept 14
         # self.speed_scale_ = 0.1
         joint_maxvelc = (self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0)
         joint_maxacc  = (self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0)

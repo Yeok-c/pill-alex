@@ -13,8 +13,8 @@ for i in range(50):
     img = cam.color_image
     img_ins_seg, img_sem_seg = pill_segmentation_mask_first(img)
 
-    if len(plt.get_fignums())==0 or len(fig.figure.axes) != 6: # There is no figure open or number of axes is incorrect
-        fig, axs = create_axs(cam.color_image) # Init figure
+    if len(plt.get_fignums())==0 or len(fig.figure.axes) != 2: # There is no figure open or number of axes is incorrect
+        fig, axs = create_axs(cam.color_image, 2, 'Segmentation Results') # Init figure
 
     motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening = grasp.think(img, img_ins_seg,
                                                                         img_sem_seg, 0.1, True, axs)

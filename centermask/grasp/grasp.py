@@ -247,24 +247,19 @@ def grasp_detection(img, img_ins_seg, img_sem_seg, vis, axs):
     # ax6 = plt.subplot(2, 3, 6), ax6.set_title("img_sem_seg"),plt.imshow(img_sem_seg)
     # plt.show()
 
-    if vis:
-
-                # fig, axs = plt.subplots(2, 3, constrained_layout=True)
-        # figManager = plt.get_current_fig_manager()
-        # figManager.window.showMaximized()
-            
+    if vis:            
         axs[0].set_data(img[:,:,::-1])
-        axs[0].set_label('img_gray')
-        axs[1].set_data(markers)
-        axs[1].set_label('markers')    
-        axs[2].set_data(opening)
-        axs[2].set_label('opening') 
-        axs[3].set_data(markers_ctrp)
-        axs[3].set_label('markers_ctrp') 
-        axs[4].set_data(img_ins_seg)
-        axs[4].set_label('img_ins_seg') 
-        axs[5].set_data(img_sem_seg)
-        axs[5].set_label('img_sem_seg') 
+        axs[0].set_label('img')
+        # axs[1].set_data(markers)
+        # axs[1].set_label('markers')    
+        # axs[2].set_data(opening)
+        # axs[2].set_label('opening') 
+        axs[1].set_data(markers_ctrp)
+        axs[1].set_label('markers_ctrp') 
+        # axs[4].set_data(img_ins_seg)
+        # axs[4].set_label('img_ins_seg') 
+        # axs[5].set_data(img_sem_seg)
+        # axs[5].set_label('img_sem_seg') 
 
         # # fig, axs = plt.subplots(2, 3, constrained_layout=True)
         # # figManager = plt.get_current_fig_manager()
@@ -364,6 +359,7 @@ def push(img, depth):
     grasp_coord     = (0, 0)
     grasp_angle     = 0
     grasp_opening   = 0
+
     # Human-in-the-loop Manipulation
     push_start, push_end, motion_command = push_motion_generation(img)
 

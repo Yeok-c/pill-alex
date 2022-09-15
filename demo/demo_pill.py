@@ -119,19 +119,20 @@ def pill_segmentation_mask_first(img):
     # logger.info("Arguments: " + str(args))
     cfg = setup_cfg(args)
 
+    img_ = copy.deepcopy(img)
     # wipe all detections outside the manipulation area
-    img[:,:mask_corners[0][0]  ,:] = 1
-    img[:,mask_corners[1][0]:-1,:] = 1
-    img[:mask_corners[0][1],:  ,:] = 1
-    img[mask_corners[1][1]:-1,:,:] = 1
+    img_[:,:mask_corners[0][0]  ,:] = 1
+    img_[:,mask_corners[1][0]:-1,:] = 1
+    img_[:mask_corners[0][1],:  ,:] = 1
+    img_[mask_corners[1][1]:-1,:,:] = 1
 
     # do not detect gripper as pill
-    img[0:45, 780:920,:] = 1
+    img_[0:45, 780:920,:] = 1
 
     # use PIL, to be consistent with evaluation
     #path = '/home/hanwen/Projects/qingwei/centermask2/input_img/06150_Color.png'
     #img = read_image(path, format="BGR")
-    img_sem_seg = copy.deepcopy(img)
+    img_sem_seg = copy.deepcopy(img_)
     img_sem_seg = np.swapaxes(img_sem_seg, 0,2)
     img_sem_seg = np.swapaxes(img_sem_seg, 1,2)
     img_sem_seg = img_sem_seg[0]
@@ -140,7 +141,7 @@ def pill_segmentation_mask_first(img):
     # Detection
     demo = VisualizationDemo(cfg)
     start_time = time.time()
-    predictions, visualized_output = demo.run_on_image(img)
+    predictions, visualized_output = demo.run_on_image(img_) # run on masked image
     len_instance = len(predictions['instances'])
 
     #sem seg

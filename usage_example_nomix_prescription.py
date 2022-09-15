@@ -84,13 +84,17 @@ if __name__ == "__main__":
                 # Reflow (Existed but order fulfilled)
                     # reflow to storehouse from platform
                     print("\n reflow ...")
+
+                    plt.close('all') 
+                    fig, axs = create_axs(cam.color_image, 1, 'Human-in-loop pushing')
+
                     motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening = grasp.push(img, auboi5_controller.cTo_z_)
                 
                 else:
                 # Pick (Existed and order not fulfilled)
                     # Create axs if the six subplots were closed / modified
-                    if len(plt.get_fignums())==0 or len(fig.figure.axes) != 6:
-                        fig, axs = create_axs(cam.color_image)
+                    if len(plt.get_fignums())==0 or len(fig.figure.axes) != 2:
+                        fig, axs = create_axs(cam.color_image, 2, 'Segmentation Results')
                     
                     motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening = grasp.think(img, img_ins_seg,
                                                                                             img_sem_seg, auboi5_controller.cTo_z_, vis_grasp, axs)
