@@ -1,5 +1,6 @@
 from centermask.grasp import grasp
 from demo.demo_pill import pill_segmentation, pill_segmentation_mask_first
+from figure.utils import create_axs
 from detectron2.data.detection_utils import read_image
 from centermask.realsense_capture import d415_frames
 from auboi5_controller import AuboController
@@ -44,16 +45,7 @@ if __name__ == "__main__":
     prescription_timing = {
                             'pill_A':[1], 'pill_B':[1], 'pill_C':[1], 'pill_D':[1], 
                             'pill_E':[1], 'pill_F':[1], 'pill_G':[1], 'pill_H':[1]
-                          }  # TIMING: 0 for 8:00, 1 for 12:00, 2 for 17:00, 3 for 21:00 
-
-    fig, AXS = plt.subplots(2, 3, constrained_layout=True)
-    AXS = AXS.flatten()
-    axs=[]
-    figManager = plt.get_current_fig_manager()
-    figManager.window.showMaximized()
-    for i, AX in enumerate(AXS):
-        axs.append(AX.imshow(cam.color_image))
-        
+                          }  # TIMING: 0 for 8:00, 1 for 12:00, 2 for 17:00, 3 for 21:00         
 
     # Process the prescription
     for pill_name, presc_list in prescription_timing.items():
@@ -96,6 +88,10 @@ if __name__ == "__main__":
                 
                 else:
                 # Pick (Existed and order not fulfilled)
+                    # Create axs if the six subplots were closed / modified
+                    if len(plt.get_fignums())==0 or len(fig.figure.axes) != 6:
+                        fig, axs = create_axs(cam.color_image)
+                    
                     motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening = grasp.think(img, img_ins_seg,
                                                                                             img_sem_seg, auboi5_controller.cTo_z_, vis_grasp, axs)
                 
