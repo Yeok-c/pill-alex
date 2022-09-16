@@ -11,7 +11,9 @@ for i in range(20): # Capture many images for camera to calibrate itself
 for i in range(50):
     cam.capture()
     img = cam.color_image
-    img_ins_seg, img_sem_seg = pill_segmentation_mask_first(img)
+    img_ins_seg, img_sem_seg, centroids = pill_segmentation_mask_first(img)
+    
+
 
     if len(plt.get_fignums())==0 or len(fig.figure.axes) != 2: # There is no figure open or number of axes is incorrect
         fig, axs = create_axs(cam.color_image, 2, 'Segmentation Results') # Init figure

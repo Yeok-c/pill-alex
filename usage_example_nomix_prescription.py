@@ -31,7 +31,6 @@ if __name__ == "__main__":
 
     # motor
     mc = MotorController('/dev/ttyUSB1')
-    
     # camera
     cam = d415_frames.camera()
     for i in range(20):
@@ -43,8 +42,8 @@ if __name__ == "__main__":
     
     # Prescription for one day
     prescription_timing = {
-                            'pill_A':[1], 'pill_B':[1], 'pill_C':[1], 'pill_D':[1], 
-                            'pill_E':[1], 'pill_F':[1], 'pill_G':[1], 'pill_H':[1]
+                            'pill_A':[1,2], 'pill_B':[2], 'pill_C':[1,3], 'pill_D':[1], 
+                            'pill_E':[3], 'pill_F':[1,4], 'pill_G':[1,4], 'pill_H':[1]
                           }  # TIMING: 0 for 8:00, 1 for 12:00, 2 for 17:00, 3 for 21:00         
 
     # Process the prescription
@@ -59,7 +58,7 @@ if __name__ == "__main__":
             mc.go_position(mc.find_box(pill_name[-1]))
             time.sleep(0.1)
             auboi5_controller.moveJ(auboi5_controller.find_capture_position(pill_name[-1])) 
-            auboi5_controller.pick_one_time(auboi5_controller.find_grasping_pose(pill_name[-1]),5, 0.08-0.003)
+            auboi5_controller.pick_one_time(auboi5_controller.find_grasping_pose(pill_name[-1]),5, 0.08-0.003) # z_offset has nothing to do with depth that it 'digs' into canister
             auboi5_controller.place_one_time(auboi5_controller.find_place_pose(pill_name[-1]), 0.04)  # normally use this
             # auboi5_controller.place_one_time(auboi5_controller.medicine_box_position(1, 1))
 
@@ -70,7 +69,7 @@ if __name__ == "__main__":
             cam.capture()
             cam.capture()
             img = cam.color_image
-            img_ins_seg, img_sem_seg = pill_segmentation_mask_first(img)
+            img_ins_seg, img_sem_seg, centroids = pill_segmentation_mask_first(img)
             # img_ins_seg, img_sem_seg = pill_segmentation(img)
             num_pill_on_platform = grasp.check_obj_exist(img, img_ins_seg, img_sem_seg, vis_checkexist)
 
@@ -109,7 +108,7 @@ if __name__ == "__main__":
 
                 # Results
                 # 0:pushing, 1:swiping, >=2:picking
-                if motion_command == 0:
+                if motion_command == 0: 
                     print('push_start:', push_start)
                     print('push_end:', push_end)
                     ps_xy = auboi5_controller.eye_hand_transfer(push_start)
@@ -122,6 +121,7 @@ if __name__ == "__main__":
                     ps_xy = auboi5_controller.eye_hand_transfer(push_start)
                     pe_xy = auboi5_controller.eye_hand_transfer(push_end)
                     auboi5_controller.set_sweep(ps_xy, pe_xy)
+                    
 
                 elif motion_command >= 2 and motion_command<=7:
                     print('grasp_coord:', grasp_coord)
@@ -154,7 +154,7 @@ if __name__ == "__main__":
                 
                 # Grasp SOME without looking
                 mc.go_position(mc.find_box(pill_name[-1]))
-                time.sleep(0.5)
+                time.sleep(0.1)
                 auboi5_controller.moveJ(auboi5_controller.find_capture_position(pill_name[-1])) 
                 auboi5_controller.pick_one_time(auboi5_controller.find_grasping_pose(pill_name[-1]),5)
                 auboi5_controller.place_one_time(auboi5_controller.find_place_pose(pill_name[-1]))

@@ -112,6 +112,21 @@ def pill_segmentation(img):
 
     return img_ins_seg, img_sem_seg
 
+
+def get_centroid_from_single_mask(mask):
+    x_c = 0
+    y_c = 0
+
+    area = mask.sum()
+    it = np.nditer(mask, flags=['multi_index'])
+
+    for i in it:
+        x_c = i * it.multi_index[1] + x_c
+        y_c = i * it.multi_index[0] + y_c
+
+    centroid = int(x_c/area), int(y_c/area)
+    return centroid
+
 def pill_segmentation_mask_first(img):
     mp.set_start_method("spawn", force=True)
     args = get_parser().parse_args()
@@ -158,14 +173,20 @@ def pill_segmentation_mask_first(img):
         single_mask = predictions['instances'][i-2].get_fields()['pred_masks'].cpu().numpy()
         single_mask = single_mask[0]
         img_ins_seg[single_mask == True ] = i * 1
+
+    #get centroids
+    centroids = []
+    for i in range(len_instance):
+        single_mask=predictions['instances'][i].get_fields()['pred_masks'].cpu().numpy()
+        single_mask=np.moveaxis(single_mask, 0, 2)
+        centroids.append(get_centroid_from_single_mask(single_mask))
     
     # logger.info("{}: detected {} instances in {:.2f}s".format(path, len(predictions["instances"]), time.time() - start_time))
 
     #out_filename = os.path.join(args.output, os.path.basename(path))
     #visualized_output.save(out_filename)
 
-
-    return img_ins_seg, img_sem_seg
+    return img_ins_seg, img_sem_seg, centroids
 
 if __name__ == "__main__":
     path = '/home/hanwen/Projects/pill-sorting/qingwei/centermask2/input_img/2.jpg'

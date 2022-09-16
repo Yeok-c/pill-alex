@@ -293,6 +293,42 @@ def push_motion_generation(img):
     ms.click_detect()
     return ms.motion_start, ms.motion_end, ms.motion_type
 
+def return_pushing_list(centroids, destination):
+    #     ## Example: [(700, 396), (711, 339), (716, 298), (775, 305), (592, 268)]
+    #     # 1. Calculate vector from pos to goal
+    #     # 2. Find farthest from goal
+    #     # 3. Add small offset between starting centroid and start position
+    #     # 4. Move!
+    # centroids = [(700, 396), (711, 339), (716, 298), (775, 305), (592, 268)]
+
+    def vector_length_and_angle(p1, p2):
+        dx = p2[0] - p1[0]
+        dy = p2[1] - p1[1]
+        length = np.sqrt(dx ** 2 + dy ** 2)
+        theta = np.arctan2(dy, dx)
+        return length, theta
+
+    def extend_vector(point, angle, offset):
+        extension = (offset*np.cos(angle), offset*np.sin(angle))
+        return (point[0]+extension[0], point[1]+extension[1])
+
+    centroid_info = []
+    offset = 20
+    for centroid in centroids:
+        length, angle = vector_length_and_angle(centroid, destination)
+        starting_pos = extend_vector(centroid, angle, offset)    
+        centroid_info.append((length, starting_pos))
+
+    centroid_info = sorted(centroid_info, key=lambda x: x[0], reverse=True)
+    return centroid_info
+    
+def push_motion_vector(centroids): #0 is push (like using 2 fingers), 1 is sweep (like using back of hand)
+    # [705, 185/470]
+    destination = (705, 470)
+    motion_type = 1 # sweep (backhand)
+    start_pos = return_pushing_list(centroids)[0][1]
+    return start_pos, destination, motion_type
+    
 
 def get_random_grasp(collision_free_grasp):
     # Get a random grasp
@@ -362,6 +398,8 @@ def push(img, depth):
 
     # Human-in-the-loop Manipulation
     push_start, push_end, motion_command = push_motion_generation(img)
+    # push_start, push_end, motion_command = push_motion_vector(1,1)
+    # here push_start and end are pixel coordinates
 
     K = np.array([[914.5117797851562, 0.0, 645.9793701171875], 
                 [0.0, 912.8472290039062, 341.26898193359375], 
