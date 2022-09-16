@@ -294,41 +294,62 @@ def push_motion_generation(img):
     return ms.motion_start, ms.motion_end, ms.motion_type
 
 def return_pushing_list(centroids, destination):
-    #     ## Example: [(700, 396), (711, 339), (716, 298), (775, 305), (592, 268)]
-    #     # 1. Calculate vector from pos to goal
-    #     # 2. Find farthest from goal
-    #     # 3. Add small offset between starting centroid and start position
-    #     # 4. Move!
-    # centroids = [(700, 396), (711, 339), (716, 298), (775, 305), (592, 268)]
-
-    def vector_length_and_angle(p1, p2):
+    def _vector_length_and_angle(p1, p2):
         dx = p2[0] - p1[0]
         dy = p2[1] - p1[1]
         length = np.sqrt(dx ** 2 + dy ** 2)
         theta = np.arctan2(dy, dx)
         return length, theta
 
-    def extend_vector(point, angle, offset):
+    def _extend_vector(point, angle, offset):
         extension = (offset*np.cos(angle), offset*np.sin(angle))
         return (point[0]+extension[0], point[1]+extension[1])
 
     centroid_info = []
-    offset = 20
+    offset = -50
+    
+    # 1. For each centroid
     for centroid in centroids:
-        length, angle = vector_length_and_angle(centroid, destination)
-        starting_pos = extend_vector(centroid, angle, offset)    
+        # 1a. Calculate vector from centroid to goal
+        length, angle = _vector_length_and_angle(centroid, destination)
+        # 1b. Extend vector to find pushing starting position
+        starting_pos = _extend_vector(centroid, angle, offset)    
         centroid_info.append((length, starting_pos))
-
+    # 2. Sort to find farthest from goal, and use that for pushing 
     centroid_info = sorted(centroid_info, key=lambda x: x[0], reverse=True)
     return centroid_info
     
-def push_motion_vector(centroids): #0 is push (like using 2 fingers), 1 is sweep (like using back of hand)
-    # [705, 185/470]
-    destination = (705, 470)
+def sweep_motion_vector(centroids, pill_id): #0 is push (like using 2 fingers), 1 is sweep (like using back of hand)
+    # destinations are at [705, 185/470]
+    if pill_id in ['A', 'B','C', 'D']:
+        destination = (705, 470)
+    else: 
+        destination = (705, 185)
+
     motion_type = 1 # sweep (backhand)
-    start_pos = return_pushing_list(centroids)[0][1]
+    start_pos = return_pushing_list(centroids,destination)[0][1]
     return start_pos, destination, motion_type
     
+def push_motion_vector(centroids):
+    ## [pca]
+    # Construct a buffer used by the pca analysis
+    sz = len(centroids)
+    data_pts = np.empty((sz, 2), dtype=np.float64)
+    for i in range(data_pts.shape[0]):
+        data_pts[i] = pts[i]
+    # Perform PCA analysis
+    mean = np.empty((0))
+    mean, eigenvectors, eigenvalues = cv.PCACompute2(data_pts, mean)
+    return mean, eigenvectors, eigenvalues
+    # 1. Find 2D mean of centroids, subtract from centroids
+    # 2. Perform 2D PCA on mean-centered centroids
+    # 3. Take coordinates of axis of 2nd component of PCA
+    # 4. Swipe according vectors calculated from:
+    #       - Vector distance calculated from mean + variance size
+    #       - Vector angle calculated from PCA axis
+
+
+
 
 def get_random_grasp(collision_free_grasp):
     # Get a random grasp
@@ -340,7 +361,7 @@ def get_random_grasp(collision_free_grasp):
     return grasp_coord, grasp_angle, grasp_opening, grasp_class
 
 
-def think(img, img_ins_seg, img_sem_seg, depth, vis, axs):
+def think(img, img_ins_seg, img_sem_seg, depth, vis, axs, centroids, pill_id):
     
     motion_command  = 0  # 0:pushing, 1:swiping, 2:picking
     push_start      = (0, 0)
@@ -363,7 +384,8 @@ def think(img, img_ins_seg, img_sem_seg, depth, vis, axs):
             # Determine the pushing distance (determining the pushing-starting-point)
         
         # Human-in-the-loop Manipulation
-        push_start, push_end, motion_command = push_motion_generation(img)
+        # push_start, push_end, motion_command = push_motion_generation(img)
+        push_start, push_end, motion_command = push_motion_vector(centroids, pill_id)
         
         # return motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening
     
@@ -388,7 +410,7 @@ def check_obj_exist(img, img_ins_seg, img_sem_seg, vis):
     # Check how many pills are on the platform
     return np.amax(img_ins_seg) - 1
 
-def push(img, depth):
+def push(img, centroids, pill_id, depth):
     motion_command  = 0  # 0:pushing, 1:swiping, 2:picking
     push_start      = (0, 0)
     push_end        = (0, 0)
@@ -397,8 +419,8 @@ def push(img, depth):
     grasp_opening   = 0
 
     # Human-in-the-loop Manipulation
-    push_start, push_end, motion_command = push_motion_generation(img)
-    # push_start, push_end, motion_command = push_motion_vector(1,1)
+    # push_start, push_end, motion_command = push_motion_generation(img)
+    push_start, push_end, motion_command = sweep_motion_vector(centroids, pill_id)
     # here push_start and end are pixel coordinates
 
     K = np.array([[914.5117797851562, 0.0, 645.9793701171875], 

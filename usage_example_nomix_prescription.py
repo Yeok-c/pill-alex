@@ -42,7 +42,7 @@ if __name__ == "__main__":
     
     # Prescription for one day
     prescription_timing = {
-                            'pill_A':[1,2], 'pill_B':[2], 'pill_C':[1,3], 'pill_D':[1], 
+                            'pill_A':[1], 'pill_B':[2], 'pill_C':[1,3], 'pill_D':[1], 
                             'pill_E':[3], 'pill_F':[1,4], 'pill_G':[1,4], 'pill_H':[1]
                           }  # TIMING: 0 for 8:00, 1 for 12:00, 2 for 17:00, 3 for 21:00         
 
@@ -86,17 +86,23 @@ if __name__ == "__main__":
 
                     plt.close('all') 
                     fig, axs = create_axs(cam.color_image, 1, 'Human-in-loop pushing')
-
-                    motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening = grasp.push(img, auboi5_controller.cTo_z_)
+                    
+                    # If there is NO more pills requested from this pill_name (order already fulfilled)
+                    # SWEEP back into the box
+                    motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening = grasp.push(img, centroids, pill_name[-1], auboi5_controller.cTo_z_)
                 
                 else:
-                # Pick (Existed and order not fulfilled)
+                # If there IS  more pills requested from this pill_name (order not fulfilled)
+
                     # Create axs if the six subplots were closed / modified
                     if len(plt.get_fignums())==0 or len(fig.figure.axes) != 2:
                         fig, axs = create_axs(cam.color_image, 2, 'Segmentation Results')
                     
+                    # Logic included in grasp.think:
+                    # If there is no good picking spots -> Push to separate
+                    # If there is good picking spots -> Pick (Existed and order not fulfilled)
                     motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening = grasp.think(img, img_ins_seg,
-                                                                                            img_sem_seg, auboi5_controller.cTo_z_, vis_grasp, axs)
+                                                                                            img_sem_seg, auboi5_controller.cTo_z_, vis_grasp, axs, centroids, pill_name[-1])
                 
                 fig.canvas.draw()
                 fig.canvas.flush_events()
