@@ -15,15 +15,16 @@ def drawAxis(img, p_, q_, colour, scale):
     # Here we lengthen the arrow by a factor of scale
     q[0] = p[0] - scale * hypotenuse * cos(angle)
     q[1] = p[1] - scale * hypotenuse * sin(angle)
-    cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), colour, 5, cv.LINE_AA)
+    img=cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), colour, 5, cv.LINE_AA)
     # create the arrow hooks
     p[0] = q[0] + 9 * cos(angle + pi / 4)
     p[1] = q[1] + 9 * sin(angle + pi / 4)
-    cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), colour, 5, cv.LINE_AA)
+    img=cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), colour, 5, cv.LINE_AA)
     p[0] = q[0] + 9 * cos(angle - pi / 4)
     p[1] = q[1] + 9 * sin(angle - pi / 4)
-    cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), colour, 5, cv.LINE_AA)
+    img=cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), colour, 5, cv.LINE_AA)
     ## [visualization1]
+    return img 
 
 
 def getOrientation(pts, img):
@@ -248,24 +249,19 @@ def grasp_detection(img, img_ins_seg, img_sem_seg, vis, axs):
     # plt.show()
 
     if vis:            
-        axs[0].set_data(img[:,:,::-1])
-        axs[0].set_label('img')
-        # axs[1].set_data(markers)
-        # axs[1].set_label('markers')    
-        # axs[2].set_data(opening)
-        # axs[2].set_label('opening') 
-        axs[1].set_data(markers_ctrp)
-        axs[1].set_label('markers_ctrp') 
-        # axs[4].set_data(img_ins_seg)
-        # axs[4].set_label('img_ins_seg') 
-        # axs[5].set_data(img_sem_seg)
-        # axs[5].set_label('img_sem_seg') 
-
-        # # fig, axs = plt.subplots(2, 3, constrained_layout=True)
-        # # figManager = plt.get_current_fig_manager()
-        # # figManager.window.showMaximized()
-
-            
+        # axs[0].set_data(img[:,:,::-1])
+        # axs[0].set_label('img')
+        # axs[1].set_data(markers_ctrp)
+        # axs[1].set_label('markers_ctrp') 
+        
+        mask_color = cv.cvtColor(markers_ctrp,cv.COLOR_GRAY2RGB)
+        mask_color[:,:,0]=1
+        added_image = cv.addWeighted(
+            img[:,:,::-1],0.5,
+            mask_color,0.5,0
+            )
+        axs.set_data(added_image)
+        axs.set_label('Image with segmentation and grasping inference results')
         # axs[0, 0].imshow(img[:,:,::-1])
         # axs[0, 0].set_title('img_gray')
         # axs[0, 1].imshow(markers)
@@ -306,7 +302,7 @@ def return_pushing_list(centroids, destination):
         return (point[0]+extension[0], point[1]+extension[1])
 
     centroid_info = []
-    offset = -50
+    offset = -45
     
     # 1. For each centroid
     for centroid in centroids:
@@ -331,25 +327,11 @@ def sweep_motion_vector(centroids, pill_id): #0 is push (like using 2 fingers), 
     return start_pos, destination, motion_type
     
 def push_motion_vector(centroids):
-    ## [pca]
-    # Construct a buffer used by the pca analysis
-    sz = len(centroids)
-    data_pts = np.empty((sz, 2), dtype=np.float64)
-    for i in range(data_pts.shape[0]):
-        data_pts[i] = pts[i]
-    # Perform PCA analysis
-    mean = np.empty((0))
-    mean, eigenvectors, eigenvalues = cv.PCACompute2(data_pts, mean)
-    return mean, eigenvectors, eigenvalues
-    # 1. Find 2D mean of centroids, subtract from centroids
-    # 2. Perform 2D PCA on mean-centered centroids
-    # 3. Take coordinates of axis of 2nd component of PCA
-    # 4. Swipe according vectors calculated from:
-    #       - Vector distance calculated from mean + variance size
-    #       - Vector angle calculated from PCA axis
-
-
-
+    # Just push towards center
+    destination = (705, 285)
+    motion_type = 0
+    start_pos = return_pushing_list(centroids,destination)[0][1] # push farthest one
+    return start_pos, destination, motion_type
 
 def get_random_grasp(collision_free_grasp):
     # Get a random grasp
@@ -385,7 +367,9 @@ def think(img, img_ins_seg, img_sem_seg, depth, vis, axs, centroids, pill_id):
         
         # Human-in-the-loop Manipulation
         # push_start, push_end, motion_command = push_motion_generation(img)
-        push_start, push_end, motion_command = push_motion_vector(centroids, pill_id)
+        push_start, push_end, motion_command = push_motion_vector(centroids)
+        img_with_axis = drawAxis(img, push_start, push_end, 255, 1)
+        axs.set_data(img_with_axis)
         
         # return motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening
     
@@ -410,7 +394,7 @@ def check_obj_exist(img, img_ins_seg, img_sem_seg, vis):
     # Check how many pills are on the platform
     return np.amax(img_ins_seg) - 1
 
-def push(img, centroids, pill_id, depth):
+def push(img, centroids, pill_id, depth, axs):
     motion_command  = 0  # 0:pushing, 1:swiping, 2:picking
     push_start      = (0, 0)
     push_end        = (0, 0)
@@ -421,6 +405,8 @@ def push(img, centroids, pill_id, depth):
     # Human-in-the-loop Manipulation
     # push_start, push_end, motion_command = push_motion_generation(img)
     push_start, push_end, motion_command = sweep_motion_vector(centroids, pill_id)
+    img_with_axis = drawAxis(img, push_start, push_end, 255, 1)
+    axs.set_data(img_with_axis)
     # here push_start and end are pixel coordinates
 
     K = np.array([[914.5117797851562, 0.0, 645.9793701171875], 

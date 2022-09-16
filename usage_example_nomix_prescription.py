@@ -6,6 +6,7 @@ from centermask.realsense_capture import d415_frames
 from auboi5_controller import AuboController
 from motor_control import MotorController
 import time
+import numpy as np
 # import math
 from copy import deepcopy
 # import cv2
@@ -42,13 +43,17 @@ if __name__ == "__main__":
     
     # Prescription for one day
     prescription_timing = {
-                            'pill_A':[1], 'pill_B':[2], 'pill_C':[1,3], 'pill_D':[1], 
+                            'pill_A':[1,2], 'pill_B':[2,4], 'pill_C':[1,3], 'pill_D':[1], 
                             'pill_E':[3], 'pill_F':[1,4], 'pill_G':[1,4], 'pill_H':[1]
                           }  # TIMING: 0 for 8:00, 1 for 12:00, 2 for 17:00, 3 for 21:00         
 
+    plt.close('all')
+    fig, axs = create_axs(np.ones((720,1280,3)), 1)
+
+
     # Process the prescription
     for pill_name, presc_list in prescription_timing.items():
-        
+
         pick_todo_num = len(presc_list)
         if pick_todo_num<= 0:
             continue  # skip
@@ -83,20 +88,15 @@ if __name__ == "__main__":
                 # Reflow (Existed but order fulfilled)
                     # reflow to storehouse from platform
                     print("\n reflow ...")
-
-                    plt.close('all') 
-                    fig, axs = create_axs(cam.color_image, 1, 'Human-in-loop pushing')
-                    
                     # If there is NO more pills requested from this pill_name (order already fulfilled)
                     # SWEEP back into the box
-                    motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening = grasp.push(img, centroids, pill_name[-1], auboi5_controller.cTo_z_)
+                    motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening = grasp.push(img, centroids, pill_name[-1], auboi5_controller.cTo_z_, axs)
                 
                 else:
                 # If there IS  more pills requested from this pill_name (order not fulfilled)
 
-                    # Create axs if the six subplots were closed / modified
-                    if len(plt.get_fignums())==0 or len(fig.figure.axes) != 2:
-                        fig, axs = create_axs(cam.color_image, 2, 'Segmentation Results')
+                    # if len(plt.get_fignums())==0 or len(fig.figure.axes) != 1:
+                    # fig, axs = create_axs(cam.color_image, 1, 'Segmentation Results')
                     
                     # Logic included in grasp.think:
                     # If there is no good picking spots -> Push to separate

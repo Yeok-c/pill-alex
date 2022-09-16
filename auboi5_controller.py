@@ -22,7 +22,7 @@ class AuboController (threading.Thread):
             print("connection failed!!")
         self.robot.robot_startup()
         self.robot.init_profile()
-        self.speed_scale_ = 1 # I CHANGED THIS! Sept 14
+        self.speed_scale_ = 0.7 # I CHANGED THIS! Sept 14
         # self.speed_scale_ = 0.1
         joint_maxvelc = (self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0)
         joint_maxacc  = (self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0)
@@ -158,9 +158,9 @@ class AuboController (threading.Thread):
         k = (start_p_xy[1]-finish_p_xy[1])/(start_p_xy[0]-finish_p_xy[0])
         x_theta = math.atan(abs(k))
         if k>0:
-            angle = -(math.pi/2 - x_theta)
+            angle = -(math.pi/2 - x_theta) +1.5708/2
         elif k<0:
-            angle = (math.pi/2 - x_theta)
+            angle = (math.pi/2 - x_theta) -1.5708/2
 
         start_p = self.assign_pick_point(start_p_xy[0],start_p_xy[1],angle,self.sweep_z_)
         finish_p = self.assign_pick_point(finish_p_xy[0],finish_p_xy[1],angle,self.sweep_z_)
