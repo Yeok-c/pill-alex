@@ -329,10 +329,10 @@ class AuboController (threading.Thread):
     def find_grasping_pose(self, pill_id):
         # Grasp SOME
 
-        x_rand_range = 0.03
-        y_rand_range = 0.04
+        x_rand_range = 0.01
+        y_rand_range = 0.02
         X_POS = [0.0755, 0.1827, 0.2930, 0.4012] # Col 1,2,3,4
-        Y_POS = [-0.405, -0.147] # Row 1,2
+        Y_POS = [-0.405, -0.1800]# -0.147] # Row 1,2
         Z_POS = 0.1606959209601539
         R =  [0.00032001149681460804, -0.9998324819174745, 0.01829231174002348, 0.0005450014594178438]
         grasp_transform_1 = [X_POS[0], Y_POS[0], Z_POS]
