@@ -19,7 +19,10 @@ from demo.predictor import VisualizationDemo
 from centermask.config import get_cfg
 from centermask.grasp import grasp
 
-mask_corners = [[544,192], [857,422]]
+# mask_corners = [[544,192], [857,422]]
+# mask_corners = [[540,225], [831,445]]
+mask_corners = [[550,190], [870,445]]
+
 
 def setup_cfg(args):
     # load config from file and command-line arguments

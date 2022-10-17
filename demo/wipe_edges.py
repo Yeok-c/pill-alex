@@ -8,7 +8,8 @@ cam = d415_frames.camera()
 for i in range(20):
     cam.capture()
 
-mask_corners = [[544,192], [857,422]]
+mask_corners = [[550,190], [870,445]]
+# mask_corners = [[540,225], [831,445]]
 
 for i in range(50):
     cam.capture()

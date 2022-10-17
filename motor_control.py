@@ -153,8 +153,8 @@ class MotorController:
                 time.sleep(0.5)  # wait 0.5s
                 # read 8 byte data
                 response = ser.read(8)
-                # print("read 8 byte data:")
-                # print(response)
+                print("read 8 byte data:")
+                print(response)
                 ser.close()
             except Exception as e1:
                 print("communicating error " + str(e1))
@@ -198,20 +198,22 @@ class MotorController:
 
 if __name__ == "__main__":
 
-    mc = MotorController('/dev/ttyUSB1')
+    mc = MotorController('/dev/ttyUSB0')
 
     # print("forward")
-    # mc.forward_n_step(10000)
+    mc.forward_n_step(20000)
+    # mc.reset()
 
     # print("backward")
     # mc.backward_n_step(2000)
+    # dmesg | grep tty
+
 
     
 
     # mc.move_to_all_box(box_pos)
-
-    print("Go to position")
+    # print("Go to position")
     # mc.go_position(mc.box_pos[3])
-    mc.go_position(mc.find_box('C'))
+    # mc.go_position(mc.find_box('A'))
     
 

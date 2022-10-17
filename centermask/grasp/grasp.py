@@ -289,6 +289,7 @@ def push_motion_generation(img):
     ms.click_detect()
     return ms.motion_start, ms.motion_end, ms.motion_type
 
+
 def return_pushing_list(centroids, destination):
     def _vector_length_and_angle(p1, p2):
         dx = p2[0] - p1[0]
@@ -297,10 +298,31 @@ def return_pushing_list(centroids, destination):
         theta = np.arctan2(dy, dx)
         return length, theta
 
+    def _constrain_vector_extension(x, y, mask_corners):
+
+        if x < mask_corners[0][0]:
+            x = mask_corners[0][0]
+
+        elif x > mask_corners[1][0]:
+            x = mask_corners[1][0]
+
+        elif y < mask_corners[0][1]:
+            y = mask_corners[0][1]
+
+        elif y > mask_corners[1][1]:
+            y = mask_corners[1][1]
+
+        return x,y
+
     def _extend_vector(point, angle, offset):
         extension = (offset*np.cos(angle), offset*np.sin(angle))
-        return (point[0]+extension[0], point[1]+extension[1])
+        x = point[0]+extension[0]
+        y = point[1]+extension[1]
+        return x,y
+    
 
+    ## Params that should be moved outside later
+    mask_corners = [[540,225], [831,445]]
     centroid_info = []
     offset = -45
     
@@ -309,8 +331,11 @@ def return_pushing_list(centroids, destination):
         # 1a. Calculate vector from centroid to goal
         length, angle = _vector_length_and_angle(centroid, destination)
         # 1b. Extend vector to find pushing starting position
-        starting_pos = _extend_vector(centroid, angle, offset)    
-        centroid_info.append((length, starting_pos))
+        x,y = _extend_vector(centroid, angle, offset)    
+        # 1c. If extended vector lies outside the boundary then set it to the boundary location
+        x,y = _constrain_vector_extension(x, y, mask_corners)
+        # append to list
+        centroid_info.append((length, (x,y)))
     # 2. Sort to find farthest from goal, and use that for pushing 
     centroid_info = sorted(centroid_info, key=lambda x: x[0], reverse=True)
     return centroid_info
@@ -367,6 +392,7 @@ def think(img, img_ins_seg, img_sem_seg, depth, vis, axs, centroids, pill_id):
         
         # Human-in-the-loop Manipulation
         # push_start, push_end, motion_command = push_motion_generation(img)
+        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
         push_start, push_end, motion_command = push_motion_vector(centroids)
         img_with_axis = drawAxis(img, push_start, push_end, 255, 1)
         axs.set_data(img_with_axis)
@@ -404,6 +430,8 @@ def push(img, centroids, pill_id, depth, axs):
 
     # Human-in-the-loop Manipulation
     # push_start, push_end, motion_command = push_motion_generation(img)
+    
+    img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
     push_start, push_end, motion_command = sweep_motion_vector(centroids, pill_id)
     img_with_axis = drawAxis(img, push_start, push_end, 255, 1)
     axs.set_data(img_with_axis)

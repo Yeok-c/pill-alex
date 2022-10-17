@@ -13,24 +13,26 @@ class PythonSerialDriver():
         baud = 38400
         baseports = ['/dev/ttyUSB', '/dev/ttyACM', 'COM', '/dev/tty.usbmodem1234']
         self.ser = None
+
+        port = "/dev/ttyUSB1"
+        self.ser = serial.Serial(port, baud, timeout=1) # 1s timeout
+        # while not self.ser:
+        #     for baseport in baseports:
+        #         if self.ser:
+        #             break
+        #         for i in range(0, 64):
+        #             try:
+        #                 port = baseport + str(i)
+        #                 self.ser = serial.Serial(port, baud, timeout=1) # 1s timeout
+        #                 print (repr('Driver: Opened ' + port + '\r'))
+        #                 break
+        #             except:
+        #                 self.ser = None
+        #                 pass
         
-        while not self.ser:
-            for baseport in baseports:
-                if self.ser:
-                    break
-                for i in range(0, 64):
-                    try:
-                        port = baseport + str(i)
-                        self.ser = serial.Serial(port, baud, timeout=1) # 1s timeout
-                        print (repr('Driver: Opened ' + port + '\r'))
-                        break
-                    except:
-                        self.ser = None
-                        pass
-        
-            if not self.ser:
-                    print (repr('Driver: Could not open a serial port!!!'))
-                    sys.exit(1)      
+        #     if not self.ser:
+        #             print (repr('Driver: Could not open a serial port!!!'))
+        #             sys.exit(1)      
 
         self.ser.reset_input_buffer()
         self.ser.reset_output_buffer()               

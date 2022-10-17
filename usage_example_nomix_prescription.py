@@ -21,7 +21,21 @@ def place_manager(pick_todo_num, presc_list, day):
 
     return place_row, place_col
 
+t = time.time()
+def tim(last_time, task_name):
+    current_time = time.time()
+    past_time = current_time - last_time
+    print("Time elapsed since: ", task_name, " - ", past_time)
+    return current_time
 
+# usage
+# t = tim(t)
+# both prints out time elapsed and records down current time
+
+
+## TODO
+# 1. Tune edge cases - for both sweeping and swiping - no offset if at edge.
+# 2. Replace medcine
 
 if __name__ == "__main__":
     # robot
@@ -31,7 +45,7 @@ if __name__ == "__main__":
     # exit()
 
     # motor
-    mc = MotorController('/dev/ttyUSB1')
+    mc = MotorController('/dev/ttyUSB0')
     # camera
     cam = d415_frames.camera()
     for i in range(20):
@@ -43,8 +57,10 @@ if __name__ == "__main__":
     
     # Prescription for one day
     prescription_timing = {
-                            'pill_A':[1,2], 'pill_B':[2,4], 'pill_C':[1,3], 'pill_D':[1], 
-                            'pill_E':[3], 'pill_F':[1,4], 'pill_G':[1,4], 'pill_H':[1]
+                            'pill_A':[1,2], 'pill_B':[2], 'pill_C':[1,3], 'pill_D':[1], 
+                            'pill_E':[3], 'pill_F':[1,4], 'pill_G':[1,4], 'pill_H':[4]
+                            # 'pill_A':[], 'pill_B':[], 'pill_C':[], 'pill_D':[], 
+                            # 'pill_E':[], 'pill_F':[], 'pill_G':[], 'pill_H':[1,1,1,1,1,1,1,1,1,1]
                           }  # TIMING: 0 for 8:00, 1 for 12:00, 2 for 17:00, 3 for 21:00         
 
     plt.close('all')

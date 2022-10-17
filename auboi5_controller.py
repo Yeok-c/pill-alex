@@ -22,7 +22,7 @@ class AuboController (threading.Thread):
             print("connection failed!!")
         self.robot.robot_startup()
         self.robot.init_profile()
-        self.speed_scale_ = 0.7 # I CHANGED THIS! Sept 14
+        self.speed_scale_ = 0.5 # I CHANGED THIS! Sept 14
         # self.speed_scale_ = 0.1
         joint_maxvelc = (self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0)
         joint_maxacc  = (self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0)
@@ -37,8 +37,8 @@ class AuboController (threading.Thread):
         self.srt = PythonSerialDriver()
         
         self.cTo_z_ = 0.326 # Camera to hand distance
-        self.pick_z_ = 0.134 + 0.018 - 0.005 + 0.062 + 0.013 # I believe this is the picking platforms, when they are being picked up (not when put down :O )
-        self.sweep_z_ = 0.140 + 0.012 - 0.003 +0.063 + 0.007
+        self.pick_z_ = 0.134 + 0.018 - 0.005 + 0.062 + 0.015 # I believe this is the picking platforms, when they are being picked up (not when put down :O )
+        self.sweep_z_ = 0.140 + 0.012 - 0.003 +0.063 + 0.01
 
         # I believe this is the dropoff
         self.medicine_box_position_origin_ = [-0.11568, -0.458656, 0.151801+0.005+0.025] # -0.11568, -0.457156, 0.151801
@@ -91,7 +91,7 @@ class AuboController (threading.Thread):
         if width >= 5:
             pressure = 80
         elif width == 4:
-            pressure = 70
+            pressure = 60
         elif width == 3:
             pressure = 55
         elif width == 2:
@@ -257,13 +257,25 @@ class AuboController (threading.Thread):
         return rad_transfered
 
     def medicine_box_position(self,row,column):
-        # starts from row,column=0,0
-        row_gap = 0.03
-        column_gap = 0.029
-        x = self.medicine_box_position_origin_[0] + (column) * column_gap
-        y = self.medicine_box_position_origin_[1] + (row) * row_gap
+        # starts from row,column=1,1, despite being stated that it starts at 0,0 ....
+        X=[-0.12593, -0.12593, -0.104134, -0.081723, -0.059319, -0.0381, -0.0154, 0.005693]
+        Y=[-0.455805, -0.455805, -0.421365, -0.390813, -0.3567]
+        assert(row > 0)
+        assert(column > 0)
+
+        x = X[row]
+        y = Y[column]
         z = self.medicine_box_position_origin_[2]
         return [x, y, z, 0.0, 1.0, 0.0, 0.0]
+        
+    # def medicine_box_position(self,row,column):
+    #     # starts from row,column=0,0
+    #     row_gap = 0.03
+    #     column_gap = 0.029
+    #     x = self.medicine_box_position_origin_[0] + (column) * column_gap
+    #     y = self.medicine_box_position_origin_[1] + (row) * row_gap
+    #     z = self.medicine_box_position_origin_[2]
+    #     return [x, y, z, 0.0, 1.0, 0.0, 0.0]
 
     def decide_place_row_col(self, pill_class):
         # info of each pill is stroed in 3rd axis of self.wms
@@ -301,10 +313,11 @@ class AuboController (threading.Thread):
     #     self.led.write(bytes(input_str, encoding = "utf8"))
 
     def find_place_pose(self, pill_id):
-        place_pose_1 = [0.07527888398880958, -0.28993198184034424, 0.21833367897001926+0.01, 0.0003226884309160187, -0.9999996130325639, -0.0006070149194710236, 0.0005489442472058018]
-        place_pose_2 = [0.18401451324827875, -0.28993008521408536, 0.21833178043211302+0.01, 0.00033365920891618056, -0.9999995854364833, -0.0006427299017719509, 0.000551993358184889]
-        place_pose_3 = [0.29249007993380727, -0.2899204873052338, 0.2183338261013369+0.01, 0.00032909484032954997, -0.9999995778093516, -0.0006623035118159901, 0.0005453730494115345]
-        place_pose_4 = [0.4039538787798124, -0.2899226947859364, 0.21833607048550713+0.01, 0.00032430204966982066, -0.999999581121588, -0.0006621136254581226, 0.0005423931931768068]
+        # Initially z offset is only 0.01
+        place_pose_1 = [0.07527888398880958, -0.28993198184034424, 0.21833367897001926+0.012, 0.0003226884309160187, -0.9999996130325639, -0.0006070149194710236, 0.0005489442472058018]
+        place_pose_2 = [0.18401451324827875, -0.28993008521408536, 0.21833178043211302+0.012, 0.00033365920891618056, -0.9999995854364833, -0.0006427299017719509, 0.000551993358184889]
+        place_pose_3 = [0.29249007993380727, -0.2899204873052338, 0.2183338261013369+0.012, 0.00032909484032954997, -0.9999995778093516, -0.0006623035118159901, 0.0005453730494115345]
+        place_pose_4 = [0.4039538787798124, -0.2899226947859364, 0.21833607048550713+0.012, 0.00032430204966982066, -0.999999581121588, -0.0006621136254581226, 0.0005423931931768068]
 
         if pill_id == 'A':
             return place_pose_1
@@ -328,11 +341,12 @@ class AuboController (threading.Thread):
 
     def find_grasping_pose(self, pill_id):
         # Grasp SOME
-
-        x_rand_range = 0.01
+        # ROW 2, Y Limits: -0.15 to -0.19 
+        # ROW 1, Y Limits: -0.37 to -0.43
+        x_rand_range = 0.02
         y_rand_range = 0.02
         X_POS = [0.0755, 0.1827, 0.2930, 0.4012] # Col 1,2,3,4
-        Y_POS = [-0.405, -0.1800]# -0.147] # Row 1,2
+        Y_POS = [-0.400, -0.167]# -0.147] # Row 1,2
         Z_POS = 0.1606959209601539
         R =  [0.00032001149681460804, -0.9998324819174745, 0.01829231174002348, 0.0005450014594178438]
         grasp_transform_1 = [X_POS[0], Y_POS[0], Z_POS]
