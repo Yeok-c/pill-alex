@@ -25,7 +25,7 @@ t = time.time()
 def tim(last_time, task_name):
     current_time = time.time()
     past_time = current_time - last_time
-    print("Time elapsed since: ", task_name, " - ", past_time)
+    print("Time elapsed for: ", task_name, " - ", past_time)
     return current_time
 
 # usage
@@ -82,17 +82,24 @@ if __name__ == "__main__":
             auboi5_controller.pick_one_time(auboi5_controller.find_grasping_pose(pill_name[-1]),5, 0.08-0.003) # z_offset has nothing to do with depth that it 'digs' into canister
             auboi5_controller.place_one_time(auboi5_controller.find_place_pose(pill_name[-1]), 0.04)  # normally use this
             # auboi5_controller.place_one_time(auboi5_controller.medicine_box_position(1, 1))
+            t=tim(t, "push_experiment==False stuff")
 
         while True:
             # Look at the platform
             auboi5_controller.moveJ(auboi5_controller.find_capture_position(pill_name[-1])) 
             
+            t=tim(t, "moveJ")
             cam.capture()
             cam.capture()
             img = cam.color_image
+            t=tim(t, "Get color image")
+
             img_ins_seg, img_sem_seg, centroids = pill_segmentation_mask_first(img)
+            t=tim(t, "segmentation")
+
             # img_ins_seg, img_sem_seg = pill_segmentation(img)
             num_pill_on_platform = grasp.check_obj_exist(img, img_ins_seg, img_sem_seg, vis_checkexist)
+            t=tim(t, "grasp.check_obj_exist")
 
             
             # Pick&Place-loop on platform
@@ -107,7 +114,8 @@ if __name__ == "__main__":
                     # If there is NO more pills requested from this pill_name (order already fulfilled)
                     # SWEEP back into the box
                     motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening = grasp.push(img, centroids, pill_name[-1], auboi5_controller.cTo_z_, axs)
-                
+                    t=tim(t, "grasp.push")
+
                 else:
                 # If there IS  more pills requested from this pill_name (order not fulfilled)
 
@@ -119,9 +127,11 @@ if __name__ == "__main__":
                     # If there is good picking spots -> Pick (Existed and order not fulfilled)
                     motion_command, push_start, push_end, grasp_coord, grasp_angle, grasp_opening = grasp.think(img, img_ins_seg,
                                                                                             img_sem_seg, auboi5_controller.cTo_z_, vis_grasp, axs, centroids, pill_name[-1])
-                
+                    t=tim(t, "grasp.think")
+
                 fig.canvas.draw()
                 fig.canvas.flush_events()
+                t=tim(t, "canvas.draw()")
                 
                 # revise the sys x error in vision
                 push_start[0] += vision_x_error
@@ -167,7 +177,9 @@ if __name__ == "__main__":
                     
                     # Update
                     pick_todo_num -= 1
-                    
+                
+                t=tim(t, "Grasping or pushing")
+
             else:
                 # If nothing is on the platform
                 if pick_todo_num <= 0:
@@ -180,6 +192,7 @@ if __name__ == "__main__":
                 auboi5_controller.moveJ(auboi5_controller.find_capture_position(pill_name[-1])) 
                 auboi5_controller.pick_one_time(auboi5_controller.find_grasping_pose(pill_name[-1]),5)
                 auboi5_controller.place_one_time(auboi5_controller.find_place_pose(pill_name[-1]))
+                t=tim(t, "Grasp SOME without looking")
             
 
 

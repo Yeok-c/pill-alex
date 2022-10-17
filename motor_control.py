@@ -201,7 +201,7 @@ if __name__ == "__main__":
     mc = MotorController('/dev/ttyUSB0')
 
     # print("forward")
-    mc.forward_n_step(20000)
+    # mc.forward_n_step(20000)
     # mc.reset()
 
     # print("backward")
@@ -214,6 +214,6 @@ if __name__ == "__main__":
     # mc.move_to_all_box(box_pos)
     # print("Go to position")
     # mc.go_position(mc.box_pos[3])
-    # mc.go_position(mc.find_box('A'))
+    mc.go_position(mc.find_box('A'))
     
 
