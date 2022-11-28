@@ -322,7 +322,8 @@ def return_pushing_list(centroids, destination):
     
 
     ## Params that should be moved outside later
-    mask_corners = [[540,225], [831,445]]
+    # mask_corners = [[540,225], [831,445]]
+    mask_corners = [[550,190], [870,445]]
     centroid_info = []
     offset = -45
     

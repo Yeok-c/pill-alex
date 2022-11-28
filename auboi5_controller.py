@@ -5,7 +5,8 @@ import time
 from scipy.spatial.transform import Rotation as Rot
 from multiprocessing import shared_memory
 import threading
-from srt_serial import PythonSerialDriver
+from vacuum.suction import PythonSerialDriver
+# from srt_serial import PythonSerialDriver
 from copy import deepcopy
 import math
 import serial
@@ -22,8 +23,8 @@ class AuboController (threading.Thread):
             print("connection failed!!")
         self.robot.robot_startup()
         self.robot.init_profile()
-        self.speed_scale_ = 0.5 # I CHANGED THIS! Sept 14
-        # self.speed_scale_ = 0.1
+        # self.speed_scale_ = 0.7 # I CHANGED THIS! Sept 14
+        self.speed_scale_ = 0.2
         joint_maxvelc = (self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0, self.speed_scale_*2.0)
         joint_maxacc  = (self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0, self.speed_scale_*3.0)
         line_maxvelc  = self.speed_scale_*1.0
@@ -34,10 +35,12 @@ class AuboController (threading.Thread):
         self.robot.set_end_max_line_velc(line_maxvelc)
         self.robot.set_end_max_line_acc(line_maxvelc)
 
-        self.srt = PythonSerialDriver()
+        self.suction = PythonSerialDriver()
+        # self.srt = PythonSerialDriver()
+        
         
         self.cTo_z_ = 0.326 # Camera to hand distance
-        self.pick_z_ = 0.134 + 0.018 - 0.005 + 0.062 + 0.015 # I believe this is the picking platforms, when they are being picked up (not when put down :O )
+        self.pick_z_ = 0.134 + 0.018 - 0.005 + 0.062 - 0.01# I believe this is the picking platforms, when they are being picked up (not when put down :O )
         self.sweep_z_ = 0.140 + 0.012 - 0.003 +0.063 + 0.01
 
         # I believe this is the dropoff
@@ -64,14 +67,14 @@ class AuboController (threading.Thread):
         # print(current_status)
         return current_status
 
-    def pos_srt(self, pressure = 70):
-        self.srt.move3Fingers(True, pressure)
+    # def pos_srt(self, pressure = 70):
+    #     self.srt.move3Fingers(True, pressure)
 
-    def neg_srt(self, pressure = 60):
-        self.srt.move3Fingers(False, pressure)        
+    # def neg_srt(self, pressure = 60):
+    #     self.srt.move3Fingers(False, pressure)        
 
-    def zero_srt(self, pressure = 0):
-        self.srt.move3Fingers(True, pressure)
+    # def zero_srt(self, pressure = 0):
+    #     self.srt.move3Fingers(True, pressure)
 
     def opening_width_mapping(self,opening):
         if opening >= 60:
@@ -86,16 +89,15 @@ class AuboController (threading.Thread):
             width = 0
         return width
 
-    def pick_one_time(self,point,width,zoffset=0.05): 
-        self.neg_srt(0)
+    def width_to_pressure(self,width):
         if width >= 5:
             pressure = 80
         elif width == 4:
-            pressure = 60
+            pressure = 50 # for pills 60 
         elif width == 3:
-            pressure = 55
+            pressure = 40 # for pills 55
         elif width == 2:
-            pressure = 45
+            pressure = 30 # for pills 45
         elif width == 1:
             pressure = 20
         else:
@@ -112,17 +114,60 @@ class AuboController (threading.Thread):
         #     pressure = 20
         # else:
         #     pressure = 0
-        self.pos_srt(pressure)
+        return pressure
+
+    def pick_and_place_one_time(self,point,width,zoffset=0.05): 
+        # auboi5_controller.moveJ(auboi5_controller.find_capture_position(pill_name[-1])) 
+        # auboi5_controller.find_grasping_pose(pill_name[-1]),5, 0.08-0.003)
+        pressure = self.width_to_pressure(width)
+        # self.pos_srt(pressure) # Open gripper
+
+        point_pre = deepcopy(point)
+        point_pre[2] += zoffset
+        self.moveL(point_pre) # Move to above grab
+        self.suction.activate()
+        self.moveL(point)     # Move to grab
+
+        # self.neg_srt(60) # Grab (close gripper)
+
+        self.moveL(point_pre) # Move back to above grab
+
+        # def place_one_time(self,point,zoffset=0.08,pressure=60):
+        # auboi5_controller.find_place_pose(pill_name[-1]), 0.04
+        point_pre = deepcopy(point)
+        point_pre[2] += zoffset
+        
+        self.moveL(point_pre)   # Move to above drop
+        self.moveL(point)       # Move to drop
+        # self.neg_srt(0)       # Open gripper
+        # self.pos_srt(pressure)
+        self.suction.deactivate()
+
+        self.moveL(point_pre)   # Move to above drop
+        # self.neg_srt(0)         # Open gripper
+
+    def go_to_above_picking_pose(self, point, width, zoffset=0.05):
+        # self.suction.deactivate() # open gripper
+        point_pre = deepcopy(point)
+        point_pre[2] += zoffset
+        self.moveL(point_pre)
+
+    def pick_one_time(self,point,width,zoffset=0.05): 
+        pressure = self.width_to_pressure(width)
+        # self.pos_srt(pressure)
+        # self.suction.deactivate() # open gripper
 
         point_pre = deepcopy(point)
         point_pre[2] += zoffset
         self.moveL(point_pre)
+        self.suction.activate() 
         # self.pos_srt()
         # print("im in point_pre")
         self.moveL(point)
         # self.pos_srt(0)
         # time.sleep(0.1)
-        self.neg_srt(60)
+        # self.neg_srt(60) # close gripper
+
         # print("im in point")
 
         self.moveL(point_pre)
@@ -133,10 +178,12 @@ class AuboController (threading.Thread):
         point_pre[2] += zoffset
         self.moveL(point_pre)
         self.moveL(point)
-        self.neg_srt(0)
-        self.pos_srt(pressure)
+        # self.neg_srt(0)
+        # self.pos_srt(pressure) # open gripper
+        self.suction.deactivate()
+
         self.moveL(point_pre)
-        self.neg_srt(0)
+        # self.neg_srt(0) # open gripper
 
     def get_quaternion_from_euler(self, roll, pitch, yaw):
         qx = np.sin(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) - np.cos(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
@@ -153,7 +200,7 @@ class AuboController (threading.Thread):
     
     def set_aside(self,start_p_xy,finish_p_xy):
         #neg at firstc
-        self.neg_srt(60)
+        # self.neg_srt(60) # Set gripper to neutral before push or swiping
         #compute the degree
         k = (start_p_xy[1]-finish_p_xy[1])/(start_p_xy[0]-finish_p_xy[0])
         x_theta = math.atan(abs(k))
@@ -166,13 +213,13 @@ class AuboController (threading.Thread):
         finish_p = self.assign_pick_point(finish_p_xy[0],finish_p_xy[1],angle,self.sweep_z_)
         self.moveL(start_p)
         self.moveL(finish_p)
-        self.pos_srt(40)
+        # self.pos_srt(40) # Set grippe to neutral before push or swipe
         # self.moveJ(self.photo_joints_)
         # self.neg_srt(0)
 
     def set_sweep(self,start_p_xy,finish_p_xy):
         #neg at first
-        self.neg_srt(60)
+        # self.neg_srt(60)  # Set grippe to neutral before push or swipe
         #compute the degree
         k = (start_p_xy[1]-finish_p_xy[1])/(start_p_xy[0]-finish_p_xy[0])
         x_theta = math.atan(abs(k))
@@ -186,7 +233,7 @@ class AuboController (threading.Thread):
         self.moveL(start_p)
         self.moveL(finish_p)
         # self.moveJ(self.photo_joints_)
-        self.pos_srt(0)
+        # self.pos_srt(0)  # Set grippe to neutral before push or swipe
 
     def quaternion_to_Tmatrix(self, quaternion):
         """Return homogeneous rotation matrix from quaternion.
@@ -347,7 +394,10 @@ class AuboController (threading.Thread):
         y_rand_range = 0.02
         X_POS = [0.0755, 0.1827, 0.2930, 0.4012] # Col 1,2,3,4
         Y_POS = [-0.400, -0.167]# -0.147] # Row 1,2
-        Z_POS = 0.1606959209601539
+        Z_POS = 0.1606959209601539 - 0.015 - 0.005
+        # Z_POS = 0.1606959209601539
+        
+        
         R =  [0.00032001149681460804, -0.9998324819174745, 0.01829231174002348, 0.0005450014594178438]
         grasp_transform_1 = [X_POS[0], Y_POS[0], Z_POS]
         grasp_transform_2 = [X_POS[1], Y_POS[0], Z_POS]

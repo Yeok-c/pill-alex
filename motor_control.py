@@ -124,8 +124,6 @@ class MotorController:
         mylist = [0x01, 0x06, 0x07, 0xD0, 0x00, 0x01, 0x48, 0x87]
         self.ser_send(mylist)
         
-
-
     def ser_send(self, data):
         ser = serial.Serial()
         ser.port = self.port
@@ -201,7 +199,7 @@ if __name__ == "__main__":
     mc = MotorController('/dev/ttyUSB0')
 
     # print("forward")
-    # mc.forward_n_step(20000)
+    mc.forward_n_step(20000)
     # mc.reset()
 
     # print("backward")
@@ -214,6 +212,6 @@ if __name__ == "__main__":
     # mc.move_to_all_box(box_pos)
     # print("Go to position")
     # mc.go_position(mc.box_pos[3])
-    mc.go_position(mc.find_box('A'))
+    # mc.go_position(mc.find_box('A'))
     
 
