@@ -53,6 +53,10 @@ class MotorController:
         # return crc_data[2:] + crc_data[:2]
         return self.str_to_hex("0x" + crc_data[2:]), self.str_to_hex("0x" + crc_data[:2])
 
+    def get_pressure(self):
+        # [15][04][00][01][00][01][63][1E]
+        mylist=[0x15, 0x04, 0x00, 0x01, 0x00, 0x01, 0x63, 0x1E]
+        self.ser_send(mylist)
 
     def forward_n_step(self, n):
         addr = 1
@@ -128,7 +132,7 @@ class MotorController:
         ser = serial.Serial()
         ser.port = self.port
         # 9600,N,8,1
-        ser.baudrate = 9600
+        ser.baudrate = 19200
         ser.bytesize = serial.EIGHTBITS  # number of bits per bytes
         ser.parity = serial.PARITY_NONE  # set parity check
         ser.stopbits = serial.STOPBITS_ONE  # number of stop bits
@@ -196,10 +200,10 @@ class MotorController:
 
 if __name__ == "__main__":
 
-    mc = MotorController('/dev/ttyUSB0')
-
+    mc = MotorController('/dev/ttyUSB1')
+    mc.get_pressure()
     # print("forward")
-    mc.forward_n_step(20000)
+    # mc.forward_n_step(20000)
     # mc.reset()
 
     # print("backward")

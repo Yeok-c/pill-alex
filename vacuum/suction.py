@@ -21,7 +21,18 @@ class PythonSerialDriver():
 
         suction_read_baud = 19200
         self.ser_read = None
-        self.ser_read = serial.Serial(suction_read_port, suction_read_baud, timeout=0.01) # 1s timeout
+        self.ser_read = serial.Serial(
+            suction_read_port, 
+            suction_read_baud, 
+            timeout=0.01,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            xonxoff = False,
+            rtscts = False,
+            dsrdtr=False,
+            ) # 1s timeout
+
         self.ser_read.reset_input_buffer()
         self.ser_read.reset_output_buffer()         
 
@@ -61,13 +72,16 @@ class PythonSerialDriver():
             self.deactivate()
 
     def read_value(self):
-        # [12][03][00][11][00][02][96][AD]
-        self.ser_read.reset_input_buffer()
-        self.ser_read.reset_output_buffer()         
-        self.send_data('12030011000296AD')
-        time.sleep(0.1)
+        # [15][04][00][01][00][01][63][1E]
+        # self.ser_read.reset_input_buffer()
+        # self.ser_read.reset_output_buffer()         
+        
+        self.ser_read.flushInput()  # flush input buffer
+        self.ser_read.flushOutput()  # flush output buffer
+        self.send_data('150400010001631E')
+        time.sleep(0.5)
         # line = self.ser_read.readline()
-        line=self.ser_read.read(8)
+        line=self.ser_read.read(20)
         try:
             # value = float(str(line).split("b'-12,10,")[1].split(",")[0].split('\\n')[0])
             value=''
